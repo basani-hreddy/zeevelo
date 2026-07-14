@@ -3,18 +3,22 @@
 
 /* ---------------- state ---------------- */
 /* ---- accounts: every visitor signs in with their own email; data is stored
-   per-account. Only the admin email gets unlimited applications & generations. ---- */
-const ADMIN_EMAIL = "basani.hvreddy@gmail.com";
+   per-account. The owner is recognized by a SHA-256 hash of their email —
+   the address itself never appears in this source or anywhere in the UI. ---- */
+const OWNER_HASH = "5bb132421792d581679402b70cbd704cfa633aa8bb53326b13810cf448d6c4ad";
 const FREE_QUOTA = 25; // lifetime applications on Free plan
 let SESSION = null;
 try { SESSION = JSON.parse(localStorage.getItem("zeevelo:session")); } catch(e){}
+async function sha256(str){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
 function adminList(){ try{ return JSON.parse(localStorage.getItem("zeevelo:admins"))||[]; }catch(e){ return []; } }
 function saveAdminList(l){ localStorage.setItem("zeevelo:admins", JSON.stringify(l)); }
-function isOwner(){ return !!SESSION && SESSION.email.toLowerCase() === ADMIN_EMAIL; }
+function isOwner(){ return !!SESSION && SESSION.role === "owner"; }
 function isAdmin(){
   if (!SESSION) return false;
-  const e = SESSION.email.toLowerCase();
-  return e === ADMIN_EMAIL || adminList().includes(e);
+  return isOwner() || adminList().includes(SESSION.email.toLowerCase());
 }
 function USERNAME(){ return SESSION ? SESSION.name : "Guest"; }
 const STAGES = ["Matched", "Tailored", "Ready", "Submitted", "Reply"];
@@ -31,8 +35,8 @@ function save(){ localStorage.setItem(dataKey(), JSON.stringify(S)); refreshCoun
 function load(){ if(!SESSION) return null; try{ return JSON.parse(localStorage.getItem(dataKey())); }catch(e){ return null; } }
 
 /* ---------------- samples ---------------- */
-const SAMPLE_RESUME = `Harsha Basani
-Email: basani.hvreddy@gmail.com | Hyderabad, IN
+const SAMPLE_RESUME = `Alex Morgan
+Email: alex.morgan@example.com | Hyderabad, IN
 
 SUMMARY
 Full-stack engineer with 5 years of experience building web platforms with React, TypeScript, and Node.js. Strong on REST/GraphQL APIs, PostgreSQL, and AWS deployments with Docker and CI/CD.
@@ -148,7 +152,7 @@ function diffHtml(a, b){
   bw.forEach(w => { tail += (w.trim() && !aSet.has(w)) ? `<span class="add">${esc(w)}</span>` : esc(w); });
   return { orig, tail };
 }
-function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 
 /* ---------------- app actions ---------------- */
 function addJob(title, company, ats, jd, source){
@@ -175,11 +179,16 @@ function readyJob(job){
   }
   job.stage = "Ready"; save();
 }
-function quotaLeft(){ return isAdmin() ? Infinity : Math.max(0, FREE_QUOTA - S.receipts.length); }
+/* lifetime usage is tracked outside the per-account data blob so
+   "Reset my data" can NOT be used to refill the Free quota */
+function usedKey(){ return "zeevelo:used:" + (SESSION ? SESSION.email.toLowerCase() : "anon"); }
+function usedCount(){ return parseInt(localStorage.getItem(usedKey())||"0",10); }
+function quotaLeft(){ return isAdmin() ? Infinity : Math.max(0, FREE_QUOTA - usedCount()); }
 function submitJob(job, mode){
   if (!isAdmin() && quotaLeft() <= 0){
     return toast(`Free plan limit reached (${FREE_QUOTA} applications). Upgrade to keep applying.`);
   }
+  if (!isAdmin()) localStorage.setItem(usedKey(), String(usedCount()+1));
   job.stage = "Submitted";
   job.submittedAt = Date.now();
   const conf = job.ats.slice(0,2).toUpperCase() + "-" + Math.floor(10000+Math.random()*89999) + "-" + Math.random().toString(36).slice(2,4).toUpperCase();
@@ -234,7 +243,7 @@ const views = {
 dashboard(){
   const counts = Object.fromEntries(STAGES.map(s=>[s, S.jobs.filter(j=>j.stage===s).length]));
   return `<h1>Dashboard</h1>
-  <p class="sub">Welcome back, ${USERNAME()}. ${isAdmin()?'Admin account — unlimited applications & resume generations.':`Free plan — ${quotaLeft()} of ${FREE_QUOTA} applications left.`}</p>
+  <p class="sub">Welcome back, ${esc(USERNAME())}. ${isAdmin()?'Admin account — unlimited applications & resume generations.':`Free plan — ${quotaLeft()} of ${FREE_QUOTA} applications left.`}</p>
   <div class="pipeline">${STAGES.map(s=>`<div class="stage"><b>${counts[s]}</b><span>${s}</span></div>`).join("")}</div>
   <div class="grid2">
     <div class="card">
@@ -273,16 +282,16 @@ profile(){
     <p style="margin-top:10px"><button class="btn btn-sm" onclick="parsePasted()">Parse pasted text</button></p>
   </div>
   ${p ? `
-  <h2>Parsed profile — ${p.name}</h2>
+  <h2>Parsed profile — ${esc(p.name)}</h2>
   <div class="grid2">
     <div class="card"><h2 style="margin-top:0;font-size:1rem">Skills (${p.skills.length})</h2>
       <div class="chips">${p.skills.map(s=>`<span class="chip hit">${s}</span>`).join("")}</div></div>
     <div class="card"><h2 style="margin-top:0;font-size:1rem">Completeness ${p.completeness}%</h2>
       <div class="bar"><i style="width:${p.completeness}%"></i></div>
       <h2 style="font-size:1rem">Experience</h2>
-      ${p.experience.map(e=>`<p class="muted" style="font-size:.82rem">• ${e}</p>`).join("") || '<p class="muted">—</p>'}
+      ${p.experience.map(e=>`<p class="muted" style="font-size:.82rem">• ${esc(e)}</p>`).join("") || '<p class="muted">—</p>'}
       <h2 style="font-size:1rem">Education</h2>
-      ${p.education.map(e=>`<p class="muted" style="font-size:.82rem">• ${e}</p>`).join("") || '<p class="muted">—</p>'}
+      ${p.education.map(e=>`<p class="muted" style="font-size:.82rem">• ${esc(e)}</p>`).join("") || '<p class="muted">—</p>'}
     </div>
   </div>` : ""}`;
 },
@@ -312,8 +321,8 @@ jobs(){
     <div class="job-row">
       <span class="score-pill ${scoreClass(j.match.score)}">${j.match.score}</span>
       <div>
-        <h3>${j.title} · ${j.company}</h3>
-        <div class="meta">${j.ats} · ${j.source} · ${j.match.hits.length} matched / ${j.match.misses.length} missing keywords${j.tailoredScore?` · tailored ATS ${j.tailoredScore}${j.tailoredScore>=90?' ✓':' — below 90 gate'}`:""}</div>
+        <h3>${esc(j.title)} · ${esc(j.company)}</h3>
+        <div class="meta">${esc(j.ats)} · ${esc(j.source)} · ${j.match.hits.length} matched / ${j.match.misses.length} missing keywords${j.tailoredScore?` · tailored ATS ${j.tailoredScore}${j.tailoredScore>=90?' ✓':' — below 90 gate'}`:""}</div>
         <div class="chips" style="margin-top:6px">
           ${j.match.hits.slice(0,6).map(k=>`<span class="chip hit">${k}</span>`).join("")}
           ${j.match.misses.slice(0,4).map(k=>`<span class="chip miss">${k}</span>`).join("")}
@@ -341,7 +350,7 @@ queue(){
     ${q.map(j=>`
       <div class="job-row">
         <span class="score-pill ${scoreClass(j.match.score)}">${j.match.score}</span>
-        <div><h3>${j.title} · ${j.company}</h3><div class="meta">${j.ats}</div></div>
+        <div><h3>${esc(j.title)} · ${esc(j.company)}</h3><div class="meta">${j.ats}</div></div>
         <div style="display:grid;gap:6px;justify-items:end">
           <span class="status st-${j.stage}">${j.stage}</span>
           <div class="flex">
@@ -357,7 +366,7 @@ queue(){
     ${done.map(j=>`
       <div class="job-row">
         <span class="score-pill ${scoreClass(j.match.score)}">${j.match.score}</span>
-        <div><h3>${j.title} · ${j.company}</h3><div class="meta">${j.confirmation||""} ${j.reply?("· "+j.reply):""}</div></div>
+        <div><h3>${esc(j.title)} · ${esc(j.company)}</h3><div class="meta">${j.confirmation||""} ${j.reply?("· "+j.reply):""}</div></div>
         <span class="status st-${j.stage}">${j.stage}</span>
       </div>`).join("") || `<div class="empty">Nothing submitted yet.</div>`}
   </div>`;
@@ -393,7 +402,7 @@ settings(){
   </div>
   <div class="card" style="max-width:640px;margin-top:16px">
     <h2 style="margin-top:0;font-size:1.05rem">Account</h2>
-    <p><b>${USERNAME()}</b> · ${SESSION?SESSION.email:""} ${isAdmin()?'<span class="badge-admin">ADMIN</span>':'<span class="chip">FREE</span>'}</p>
+    <p><b>${esc(USERNAME())}</b> · ${SESSION?esc(SESSION.email):""} ${isAdmin()?'<span class="badge-admin">ADMIN</span>':'<span class="chip">FREE</span>'}</p>
     <p class="muted" style="margin-top:8px">${isAdmin()
       ? 'Admin plan: unlimited applications, unlimited resume generations, all submission modes unlocked.'
       : `Free plan: ${quotaLeft()} of ${FREE_QUOTA} lifetime applications remaining. Tailoring & scoring included.`}</p>
@@ -410,12 +419,12 @@ settings(){
     <div class="flex"><input type="text" id="grantEmail" placeholder="teammate@example.com" style="flex:1"><button class="btn btn-sm" onclick="grantAdmin()">Grant</button></div>
     <label style="margin-top:18px">Current admins</label>
     <div class="job-row" style="grid-template-columns:1fr auto;padding:10px 0">
-      <div><b>${ADMIN_EMAIL}</b> <span class="chip hit" style="margin-left:6px">owner</span></div><span class="muted" style="font-size:.78rem">permanent</span>
+      <div><b>${esc(SESSION.email)}</b> <span class="chip hit" style="margin-left:6px">owner (you)</span></div><span class="muted" style="font-size:.78rem">permanent</span>
     </div>
     ${adminList().map(e=>`
     <div class="job-row" style="grid-template-columns:1fr auto;padding:10px 0">
-      <div><b>${e}</b></div>
-      <button class="btn btn-sm btn-ghost" style="border-color:var(--red);color:var(--red)" onclick="revokeAdmin('${e}')">Revoke</button>
+      <div><b>${esc(e)}</b></div>
+      <button class="btn btn-sm btn-ghost" style="border-color:var(--red);color:var(--red)" onclick="revokeAdmin('${esc(e)}')">Revoke</button>
     </div>`).join("") || '<p class="muted" style="font-size:.82rem">No additional admins.</p>'}
   </div>`:""}`;
 }
@@ -424,9 +433,9 @@ settings(){
 function receiptHtml(r){
   return `<div class="receipt">
     <div class="r-head"><span>ZEEVELO · ${r.id}</span><span class="r-mode ${r.mode==='auto-rule'?'auto':''}">${r.mode}</span></div>
-    <div class="r-row"><span>Role</span><b>${r.role}</b></div>
-    <div class="r-row"><span>Company</span><b>${r.company}</b></div>
-    <div class="r-row"><span>ATS</span><b>${r.ats}</b></div>
+    <div class="r-row"><span>Role</span><b>${esc(r.role)}</b></div>
+    <div class="r-row"><span>Company</span><b>${esc(r.company)}</b></div>
+    <div class="r-row"><span>ATS</span><b>${esc(r.ats)}</b></div>
     <div class="r-row"><span>Score at send</span><b>${r.score} → ${r.tailoredScore||r.score}/100 tailored</b></div>
     <div class="r-row"><span>Resume / cover</span><b>${r.resumeVersion} / ${r.coverVersion}</b></div>
     <div class="r-row"><span>Keywords sent</span><b>${r.keywordsSent.slice(0,6).join(", ")}</b></div>
@@ -475,8 +484,10 @@ window.addManualJob = () => {
   const url = $("#jobUrl").value.trim();
   if (!jd && !url) return toast("Paste a job description (URL-only fetch needs the Workers backend).");
   if (!jd) return toast("Prototype scores pasted JD text; URL fetching lands with the backend.");
-  const title = $("#jobTitle").value.trim() || "Untitled role";
-  const company = $("#jobCompany").value.trim() || (url? new URL(url).hostname : "Unknown");
+  let host = "Unknown";
+  if (url){ try { host = new URL(url.startsWith("http")?url:"https://"+url).hostname; } catch(e){ return toast("That URL doesn't look valid."); } }
+  const title = $("#jobTitle").value.trim().slice(0,120) || "Untitled role";
+  const company = $("#jobCompany").value.trim().slice(0,120) || host;
   const j = addJob(title, company, "Manual", jd, url? "url":"pasted");
   if (j) { render(); toast(`Scored ${j.match.score}/100 — ${j.stage}`); }
 };
@@ -495,7 +506,7 @@ window.grantAdmin = () => {
   if (!isOwner()) return toast("Only the owner can grant admin access.");
   const e = $("#grantEmail").value.trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return toast("Enter a valid email.");
-  if (e === ADMIN_EMAIL) return toast("You're already the owner.");
+  if (SESSION && e === SESSION.email.toLowerCase()) return toast("You're already the owner.");
   const l = adminList();
   if (l.includes(e)) return toast("Already an admin.");
   l.push(e); saveAdminList(l); render(); toast(`Granted admin access to ${e}.`);
@@ -505,8 +516,11 @@ window.revokeAdmin = (e) => {
   saveAdminList(adminList().filter(x=>x!==e)); render(); toast(`Revoked admin access for ${e} — back to Free plan.`);
 };
 window.openDiff = id => {
+  if (!S.profile) return toast("Upload a resume first.");
   const j = byId(id);
+  if (!j) return;
   if (!j.tailored) tailorJob(j);
+  if (!j.tailored) return;
   const d = diffHtml(S.profile.raw, j.tailored);
   $("#diffPanel").innerHTML = `
   <h2>Diff — ${j.title} @ ${j.company}</h2>
@@ -536,10 +550,11 @@ function signInView(){
     </div>
   </div>`;
 }
-window.signIn = () => {
+window.signIn = async () => {
   const name = $("#siName").value.trim(), email = $("#siEmail").value.trim();
   if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return toast("Enter your name and a valid email.");
-  SESSION = { name, email };
+  const role = (await sha256(email.toLowerCase())) === OWNER_HASH ? "owner" : "member";
+  SESSION = { name, email, role };
   localStorage.setItem("zeevelo:session", JSON.stringify(SESSION));
   S = load() || blankState();
   VIEW = "dashboard";
@@ -549,11 +564,12 @@ window.signIn = () => {
 window.signOut = () => { localStorage.removeItem("zeevelo:session"); SESSION = null; render(); };
 
 function userCardHtml(){
-  if (!SESSION) return `<b>Not signed in</b><span class="muted" style="font-size:.72rem">Sign in to start</span>`;
-  return `<b>${SESSION.name}</b>
-    <span class="muted" style="font-size:.72rem">${SESSION.email}</span>
+  if (!SESSION) return `<b>Not signed in</b><span class="muted" style="font-size:.72rem">Use the form to log in</span>`;
+  return `<b>${esc(SESSION.name)}</b>
+    <span class="muted" style="font-size:.72rem">${esc(SESSION.email)}</span>
     ${isAdmin() ? '<span class="badge-admin">ADMIN</span><div class="quota">applications: ∞ unlimited<br>resume generations: ∞</div>'
-                : `<span class="chip" style="margin-top:6px;display:inline-block">FREE</span><div class="quota">applications left: ${quotaLeft()}/${FREE_QUOTA}</div>`}`;
+                : `<span class="chip" style="margin-top:6px;display:inline-block">FREE</span><div class="quota">applications left: ${quotaLeft()}/${FREE_QUOTA}</div>`}
+    <button class="btn btn-sm btn-ghost" style="margin-top:10px;width:100%" onclick="signOut()">Log out</button>`;
 }
 
 /* ---------------- render ---------------- */
