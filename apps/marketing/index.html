@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zeevelo — Apply smarter, not slower</title>
+<meta name="description" content="Zeevelo matches your resume to open roles, tailors every application to the job description, and applies at scale — with a receipt for every send.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF7EF;
+    --ink:#171511;
+    --ink-soft:#4c473d;
+    --line:#d9d3c4;
+    --zee:#D8F337;         /* electric chartreuse */
+    --zee-deep:#22492f;    /* bottle green */
+    --card:#ffffff;
+    --mono:'IBM Plex Mono',monospace;
+    --sans:'Space Grotesk',sans-serif;
+    --serif:'Fraunces',serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  .mono{font-family:var(--mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
+
+  /* ---------- nav ---------- */
+  nav{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:1px solid var(--line)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.25rem;text-decoration:none;letter-spacing:-.02em}
+  .logo-mark{width:30px;height:30px;background:var(--ink);color:var(--zee);display:grid;place-items:center;font-family:var(--serif);font-weight:700;font-size:1.1rem;border-radius:7px}
+  .nav-links{display:flex;gap:28px;align-items:center}
+  .nav-links a{text-decoration:none;font-size:.92rem;color:var(--ink-soft)}
+  .nav-links a:hover{color:var(--ink)}
+  .btn{display:inline-block;text-decoration:none;font-weight:600;border-radius:999px;padding:12px 26px;font-size:.95rem;transition:transform .12s ease}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-primary{background:var(--ink);color:var(--zee)}
+  .btn-ghost{border:1.5px solid var(--ink);color:var(--ink)}
+  .btn-sm{padding:8px 18px;font-size:.88rem}
+
+  /* ---------- hero ---------- */
+  header{padding:88px 0 72px;position:relative;overflow:hidden}
+  .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
+  .kicker{display:inline-block;background:var(--zee);padding:6px 14px;border-radius:999px;font-family:var(--mono);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:26px}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(2.6rem,5.4vw,4.3rem);line-height:1.04;letter-spacing:-.02em}
+  h1 em{font-style:italic;color:var(--zee-deep)}
+  .subhead{margin:24px 0 34px;font-size:1.18rem;color:var(--ink-soft);max-width:34rem}
+  .hero-ctas{display:flex;gap:14px;align-items:center}
+  .hero-note{margin-top:16px;font-family:var(--mono);font-size:.78rem;color:var(--ink-soft)}
+
+  /* receipt card in hero */
+  .receipt{background:var(--card);border:1px solid var(--line);border-radius:4px;box-shadow:0 20px 50px rgba(23,21,17,.10);padding:26px 26px 20px;font-family:var(--mono);font-size:.8rem;transform:rotate(1.5deg);position:relative}
+  .receipt::before,.receipt::after{content:"";position:absolute;left:0;right:0;height:8px;background:
+    radial-gradient(circle at 8px 0, transparent 6px, var(--card) 6.5px);background-size:16px 8px}
+  .receipt::before{top:-7px;transform:rotate(180deg)}
+  .receipt::after{bottom:-7px}
+  .receipt h3{font-family:var(--mono);font-size:.82rem;letter-spacing:.12em;text-align:center;border-bottom:1px dashed var(--line);padding-bottom:12px;margin-bottom:14px}
+  .r-row{display:flex;justify-content:space-between;padding:5px 0;color:var(--ink-soft)}
+  .r-row b{color:var(--ink);font-weight:500}
+  .r-score{display:flex;justify-content:space-between;align-items:center;background:var(--zee);margin:12px -10px;padding:10px 12px;border-radius:3px;color:var(--ink)}
+  .r-score b{font-size:1.3rem}
+  .r-stamp{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;text-align:center;color:var(--zee-deep);letter-spacing:.18em}
+
+  section{padding:84px 0;border-top:1px solid var(--line)}
+  .sec-label{font-family:var(--mono);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--zee-deep);margin-bottom:14px}
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(1.9rem,3.4vw,2.7rem);letter-spacing:-.015em;line-height:1.12;max-width:36rem}
+  .sec-intro{margin-top:16px;color:var(--ink-soft);max-width:38rem;font-size:1.05rem}
+
+  /* ---------- how it works ---------- */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:52px;counter-reset:step}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:30px 26px;position:relative}
+  .step-num{font-family:var(--serif);font-size:3.4rem;line-height:1;color:var(--zee);-webkit-text-stroke:1.5px var(--ink);margin-bottom:18px}
+  .step h3{font-size:1.15rem;margin-bottom:10px}
+  .step p{color:var(--ink-soft);font-size:.95rem}
+  .step .tag{position:absolute;top:26px;right:24px;font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;background:var(--paper);border:1px solid var(--line);padding:4px 10px;border-radius:999px}
+  .step-arrow{display:none}
+
+  /* ---------- ATS explainer ---------- */
+  .ats{display:grid;grid-template-columns:.9fr 1.1fr;gap:56px;align-items:center;margin-top:24px}
+  .dial-wrap{display:grid;place-items:center}
+  .dial{position:relative;width:280px;height:280px}
+  .dial svg{transform:rotate(-90deg)}
+  .dial-center{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+  .dial-center b{font-family:var(--serif);font-size:4.2rem;line-height:1}
+  .dial-center span{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+  .factors{display:grid;gap:14px;margin-top:36px}
+  .factor{display:grid;grid-template-columns:44px 1fr;gap:16px;align-items:start}
+  .factor .pct{font-family:var(--mono);font-weight:500;background:var(--ink);color:var(--zee);border-radius:6px;text-align:center;padding:6px 0;font-size:.82rem}
+  .factor h4{font-size:1rem;margin-bottom:2px}
+  .factor p{color:var(--ink-soft);font-size:.9rem}
+  .kw{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .kw span{font-family:var(--mono);font-size:.75rem;padding:5px 12px;border-radius:999px;border:1px solid var(--line)}
+  .kw .hit{background:var(--zee);border-color:var(--zee)}
+  .kw .miss{color:var(--ink-soft);border-style:dashed}
+
+  /* ---------- pricing ---------- */
+  .tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:52px}
+  .tier{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px 24px;display:flex;flex-direction:column}
+  .tier.pop{background:var(--ink);color:var(--paper);border-color:var(--ink);position:relative}
+  .tier.pop .price small,.tier.pop li,.tier.pop .apps{color:#b8b3a6}
+  .pop-badge{position:absolute;top:-12px;left:24px;background:var(--zee);color:var(--ink);font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:999px}
+  .tier h3{font-size:1.05rem}
+  .price{font-family:var(--serif);font-size:2.5rem;margin:14px 0 2px}
+  .price small{font-family:var(--sans);font-size:.85rem;color:var(--ink-soft)}
+  .apps{font-family:var(--mono);font-size:.75rem;letter-spacing:.06em;color:var(--ink-soft);margin-bottom:18px}
+  .tier ul{list-style:none;margin:0 0 26px;display:grid;gap:9px;font-size:.9rem;color:var(--ink-soft)}
+  .tier li::before{content:"✓ ";color:var(--zee-deep)}
+  .tier.pop li::before{color:var(--zee)}
+  .tier .btn{margin-top:auto;text-align:center}
+  .tier.pop .btn{background:var(--zee);color:var(--ink)}
+  .pricing-note{margin-top:22px;font-family:var(--mono);font-size:.78rem;color:var(--ink-soft)}
+
+  /* ---------- faq ---------- */
+  .faq-list{margin-top:44px;border-top:1px solid var(--line)}
+  details{border-bottom:1px solid var(--line)}
+  summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:22px 4px;font-weight:600;font-size:1.05rem}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";font-family:var(--serif);font-size:1.6rem;color:var(--zee-deep);transition:transform .15s}
+  details[open] summary::after{transform:rotate(45deg)}
+  details p{padding:0 4px 24px;color:var(--ink-soft);max-width:46rem}
+
+  /* ---------- final cta + footer ---------- */
+  .final{background:var(--ink);color:var(--paper);border-radius:22px;padding:70px 56px;display:flex;justify-content:space-between;align-items:center;gap:32px;margin:0 0 84px}
+  .final h2{color:var(--paper)}
+  .final .btn{background:var(--zee);color:var(--ink);white-space:nowrap}
+  footer{border-top:1px solid var(--line);padding:48px 0 40px}
+  .foot{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap}
+  .foot-col{display:grid;gap:8px;font-size:.9rem}
+  .foot-col b{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px}
+  .foot-col a{text-decoration:none;color:var(--ink-soft)}
+  .foot-col a:hover{color:var(--ink)}
+  .foot-base{margin-top:40px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:.74rem;color:var(--ink-soft);flex-wrap:wrap;gap:12px}
+
+  @media(max-width:900px){
+    .hero-grid,.ats{grid-template-columns:1fr}
+    .steps{grid-template-columns:1fr}
+    .tiers{grid-template-columns:repeat(2,1fr)}
+    .final{flex-direction:column;text-align:center;padding:48px 28px}
+    .nav-links a:not(.btn){display:none}
+  }
+  @media(max-width:560px){.tiers{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-inner">
+    <a class="logo" href="#"><span class="logo-mark">Z</span>zeevelo</a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#ats">ATS score</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-primary btn-sm" href="https://apply.zeevelo.com">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<header>
+  <div class="wrap hero-grid">
+    <div>
+      <span class="kicker">AI job-application agent</span>
+      <h1>Apply smarter, <em>not slower.</em></h1>
+      <p class="subhead">Zeevelo matches your resume to open roles, tailors every application to the job description, and applies at scale — you decide what sends automatically and what waits for your click.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="https://apply.zeevelo.com">Start free</a>
+        <a class="btn btn-ghost" href="#how">See how it works</a>
+      </div>
+      <p class="hero-note">25 free applications · no credit card · receipt for every send</p>
+    </div>
+    <div>
+      <div class="receipt" aria-label="Sample application receipt">
+        <h3>ZEEVELO · APPLICATION RECEIPT</h3>
+        <div class="r-row"><span>Role</span><b>Sr. Product Engineer</b></div>
+        <div class="r-row"><span>Company</span><b>Northwind Labs</b></div>
+        <div class="r-row"><span>ATS</span><b>Greenhouse</b></div>
+        <div class="r-row"><span>Resume</span><b>tailored · v3 (diff ✓)</b></div>
+        <div class="r-row"><span>Cover letter</span><b>drafted · approved</b></div>
+        <div class="r-score"><span>ATS MATCH</span><b>87/100</b></div>
+        <div class="r-row"><span>Submitted</span><b>Tue 09:41 · auto-rule #2</b></div>
+        <div class="r-row"><span>Confirmation</span><b>GH-58291-XK</b></div>
+        <div class="r-stamp">*** SENT &amp; LOGGED ***</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="wrap">
+    <p class="sec-label">How it works</p>
+    <h2>Three steps between you and every role you're a fit for.</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="tag">Step 1</span>
+        <div class="step-num">1</div>
+        <h3>Match</h3>
+        <p>Upload your resume once. Zeevelo parses it into a structured profile and scans thousands of live postings across Workday, Greenhouse, Lever, Ashby and more — surfacing the roles you actually fit.</p>
+      </div>
+      <div class="step">
+        <span class="tag">Step 2</span>
+        <div class="step-num">2</div>
+        <h3>Tailor</h3>
+        <p>For each match, Zeevelo rewrites your resume and drafts a cover letter around the posting's exact keywords and requirements. A side-by-side diff shows every change before it's used.</p>
+      </div>
+      <div class="step">
+        <span class="tag">Step 3</span>
+        <div class="step-num">3</div>
+        <h3>Auto-Apply</h3>
+        <p>Set your rules: applications above your score threshold submit automatically; everything else queues for one-click batch approval. Every send generates an audit receipt.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="ats">
+  <div class="wrap">
+    <p class="sec-label">The ATS score</p>
+    <h2>One number that tells you if a robot will read your resume.</h2>
+    <p class="sec-intro">Before a human sees your application, an Applicant Tracking System scores it. Zeevelo runs the same math first — scoring your resume against each job description from 0 to 100, and showing exactly what to fix.</p>
+    <div class="ats">
+      <div class="dial-wrap">
+        <div class="dial">
+          <svg width="280" height="280" viewBox="0 0 280 280">
+            <circle cx="140" cy="140" r="122" fill="none" stroke="#e8e2d3" stroke-width="18"/>
+            <circle cx="140" cy="140" r="122" fill="none" stroke="#D8F337" stroke-width="18"
+              stroke-linecap="round" stroke-dasharray="766.5" stroke-dashoffset="99.6"/>
+          </svg>
+          <div class="dial-center"><b>87</b><span>ATS match</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="factors">
+          <div class="factor"><span class="pct">40</span><div><h4>Keyword coverage</h4><p>Hard skills, tools, and certifications from the posting, weighted by how often and where they appear.</p></div></div>
+          <div class="factor"><span class="pct">25</span><div><h4>Role &amp; experience alignment</h4><p>Title similarity, seniority, and years of experience against the requirements.</p></div></div>
+          <div class="factor"><span class="pct">20</span><div><h4>Skills-section match</h4><p>Direct overlap between your structured skills and the must-have list.</p></div></div>
+          <div class="factor"><span class="pct">15</span><div><h4>Parse-ability</h4><p>Formatting an ATS can actually read — no tables, graphics, or columns that scramble your history.</p></div></div>
+        </div>
+        <div class="kw">
+          <span class="hit">react</span><span class="hit">typescript</span><span class="hit">graphql</span>
+          <span class="hit">ci/cd</span><span class="miss">kubernetes — missing</span><span class="miss">terraform — missing</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <p class="sec-label">Pricing</p>
+    <h2>Pay for volume, not features.</h2>
+    <div class="tiers">
+      <div class="tier">
+        <h3>Free</h3>
+        <div class="price">$0</div>
+        <div class="apps">25 applications · lifetime</div>
+        <ul><li>Resume upload &amp; parsing</li><li>Job matching</li><li>ATS score per job</li></ul>
+        <a class="btn btn-ghost" href="https://apply.zeevelo.com">Start free</a>
+      </div>
+      <div class="tier">
+        <h3>Starter</h3>
+        <div class="price">$19<small>/mo</small></div>
+        <div class="apps">600 applications / month</div>
+        <ul><li>Everything in Free</li><li>Tailored resume per job</li><li>Cover letter drafts</li><li>Diff review view</li></ul>
+        <a class="btn btn-ghost" href="https://apply.zeevelo.com">Choose Starter</a>
+      </div>
+      <div class="tier pop">
+        <span class="pop-badge">Most popular</span>
+        <h3>Pro</h3>
+        <div class="price">$49<small>/mo</small></div>
+        <div class="apps">1,500 applications / month</div>
+        <ul><li>Everything in Starter</li><li>Auto-apply rules engine</li><li>Priority job alerts</li><li>Recruiter reply tracking</li></ul>
+        <a class="btn" href="https://apply.zeevelo.com">Choose Pro</a>
+      </div>
+      <div class="tier">
+        <h3>Premium</h3>
+        <div class="price">$99<small>/mo</small></div>
+        <div class="apps">4,500 applications / month</div>
+        <ul><li>Everything in Pro</li><li>Highest volume</li><li>Priority support</li></ul>
+        <a class="btn btn-ghost" href="https://apply.zeevelo.com">Choose Premium</a>
+      </div>
+    </div>
+    <p class="pricing-note">Applications reset monthly. Cancel anytime.</p>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <p class="sec-label">FAQ</p>
+    <h2>Fair questions.</h2>
+    <div class="faq-list">
+      <details open>
+        <summary>Does Zeevelo apply without my permission?</summary>
+        <p>Only if you tell it to. By default, every application waits in your queue for approval. If you switch on auto-apply, you set the ATS-score and profile-completeness thresholds — anything above the bar submits automatically, anything below waits for your one-click batch approval. You can turn it off anytime.</p>
+      </details>
+      <details>
+        <summary>How do I know what was actually sent?</summary>
+        <p>Every application — automatic or manual — generates a receipt: the exact resume and cover letter versions sent, the answers given, the timestamp, and the ATS confirmation ID. Your full history is auditable in the Receipts tab.</p>
+      </details>
+      <details>
+        <summary>Which ATS platforms do you cover?</summary>
+        <p>Zeevelo works with 15+ applicant tracking systems including Workday, Greenhouse, Lever, and Ashby, with more added continuously.</p>
+      </details>
+      <details>
+        <summary>Will tailored resumes misrepresent me?</summary>
+        <p>No. Tailoring reorders, rephrases, and emphasizes what's already in your profile to match the posting's language — it never invents experience. The diff view shows every change so you stay in control of your own story.</p>
+      </details>
+      <details>
+        <summary>What happens to my resume data?</summary>
+        <p>Your profile is used only to match and apply to jobs on your behalf. We don't sell your data or share it with recruiters without an application you initiated.</p>
+      </details>
+      <details>
+        <summary>What does the ATS score actually mean?</summary>
+        <p>It's a 0–100 estimate of how well your resume matches a specific job description: keyword coverage (40%), role and experience alignment (25%), skills match (20%), and formatting parse-ability (15%). A higher score means a better chance of passing automated screening.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section style="border-top:none;padding-top:0">
+  <div class="wrap">
+    <div class="final">
+      <h2>Your next role is already posted.<br>Go get it.</h2>
+      <a class="btn" href="https://apply.zeevelo.com">Start free — 25 applications</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <a class="logo" href="#" style="align-self:flex-start"><span class="logo-mark">Z</span>zeevelo</a>
+      <div class="foot-col"><b>Product</b>
+        <a href="https://apply.zeevelo.com">Open the app</a>
+        <a href="#how">How it works</a>
+        <a href="#ats">ATS score</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+      <div class="foot-col"><b>App</b>
+        <a href="https://apply.zeevelo.com">Upload resume</a>
+        <a href="https://apply.zeevelo.com">Application queue</a>
+        <a href="https://apply.zeevelo.com">Receipts</a>
+      </div>
+      <div class="foot-col"><b>Company</b>
+        <a href="#">About</a>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Zeevelo · Every application, ATS-ready.</span>
+      <span>jobs.zeevelo.com · apply.zeevelo.com</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
